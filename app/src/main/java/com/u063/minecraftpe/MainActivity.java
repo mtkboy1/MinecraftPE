@@ -1,8 +1,10 @@
 package com.u063.minecraftpe;
 
 import com.u063.minecraftpe.server.udpServer;
+import com.u063.minecraftpe.server.Num2Byte;
 
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -35,5 +37,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }).start();
+        Log.e("num",""+Num2Byte.toByte(0x00000000372cdc9e)[7]);
     }
 }
