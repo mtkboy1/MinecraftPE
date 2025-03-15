@@ -60,6 +60,7 @@ public class udpServer {
                 datagramSocket.send(reply);
             }
             if(datagramPacket.getData()[0]==-124){
+                data = new byte[200];
                 byte[] serverData;
                 DatagramPacket reply;
                 /*byte[] serverData = datagramPacket.getData(); //0X84 BACK
@@ -69,6 +70,13 @@ public class udpServer {
                 data = ENCAPSULATION(datagramPacket.getData());
                 if(data[0]==0x09){
                     serverData = SERVER_HANDSHAKE(data); //0X84 BACK
+
+                    reply = new DatagramPacket(serverData,
+                            serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
+                    datagramSocket.send(reply);
+                }
+                if(data[0]==0x00){
+                    serverData = PONG(data); //0X84 BACK
 
                     reply = new DatagramPacket(serverData,
                             serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
@@ -127,9 +135,20 @@ public class udpServer {
     private byte[] ENCAPSULATION(byte[] bytes){
         byte[] b = new byte[bytes.length];
         String s="";
-        for(int i=10; i<96; i++){
-            b[i-10] = bytes[i];
-            s+=String.format("%02X ", bytes[i]);
+        if(bytes[4]==0x40||bytes[4]==0x00) {
+            for (int i = 10; i < bytes.length; i++) {
+                b[i - 10] = bytes[i];
+                //s += String.format("%02X ", bytes[i]);
+            }
+        } else {
+            for (int i = 0; i < bytes.length; i++) {
+                b[i] = bytes[i];
+                //s += String.format("%02X ", bytes[i]);
+            }
+        }
+        for (int i = 0; i < bytes.length; i++) {
+            //b[i] = bytes[i];
+            s += String.format("%02X ", bytes[i]);
         }
         Log.e("","len: "+bytes.length+", "+s);
         return b;
@@ -175,5 +194,18 @@ public class udpServer {
         b.put(unknown);
         serverData = b.array();
         return serverData ;
+    }
+    private byte[] PONG(byte[] bytes){
+        byte[] serverData = new byte[200];
+        ByteBuffer b = ByteBuffer.allocate(16);
+        b.put((byte) 0x84);
+        b.put(new byte[]{bytes[1], bytes[2], bytes[3]});
+        b.put((byte) 0x00);
+        b.putShort((short) (48));
+
+        b.put((byte) 0x03);
+        b.putLong(0x0000000000000b3d);
+        serverData = b.array();
+        return serverData;
     }
 }
