@@ -60,15 +60,25 @@ public class udpServer {
                 datagramSocket.send(reply);
             }
             if(datagramPacket.getData()[0]==-124){
-                byte[] serverData = new byte[7]; ////ACK
-                byte[] count = new byte[3];
-                for(int i = 1; i<4; i++){
-                    count[i-1]=datagramPacket.getData()[i];
-                }
-                serverData = ACK(count);
+                byte[] serverData = datagramPacket.getData();
                 DatagramPacket reply = new DatagramPacket(serverData,
                         serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
                 datagramSocket.send(reply);
+
+
+
+                serverData = new byte[7]; ////ACK
+                byte[] count = new byte[3];
+                for(int i = 1; i<4; i++){
+                    count[i-1]=datagramPacket.getData()[i];
+                   // Log.e("",""+count[i-1]);
+                }
+                serverData = ACK(count);
+                reply = new DatagramPacket(serverData,
+                        serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
+                datagramSocket.send(reply);
+
+
             }
         }
     }
