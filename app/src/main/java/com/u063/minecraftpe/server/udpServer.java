@@ -42,7 +42,7 @@ public class udpServer {
             DatagramPacket datagramPacket = new DatagramPacket(data,data.length);
             datagramSocket.receive(datagramPacket);
 
-            Log.e("Client", ""+datagramPacket.getData()[0]);
+            Log.e("Client", "ID: "+String.format("%02X ", datagramPacket.getData()[0])+", len: "+datagramPacket.getLength());
             if(datagramPacket.getData()[0]==0x05){
                 byte[] serverData = new byte[28]; //ID_OPEN_CONNECTION_REPLY_1
 
@@ -55,6 +55,17 @@ public class udpServer {
                 byte[] serverData = new byte[30]; ////ID_OPEN_CONNECTION_REPLY_2
 
                 serverData = CONNECTION_REPLY_2(datagramPacket.getPort());
+                DatagramPacket reply = new DatagramPacket(serverData,
+                        serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
+                datagramSocket.send(reply);
+            }
+            if(datagramPacket.getData()[0]==-124){
+                byte[] serverData = new byte[7]; ////ACK
+                byte[] count = new byte[3];
+                for(int i = 1; i<4; i++){
+                    count[i-1]=datagramPacket.getData()[i];
+                }
+                serverData = ACK(count);
                 DatagramPacket reply = new DatagramPacket(serverData,
                         serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
                 datagramSocket.send(reply);
@@ -81,6 +92,17 @@ public class udpServer {
         b.putShort((short) port);
         b.putShort((short) 1464);
         b.put((byte) 0);
+
+        serverData = b.array();
+        return serverData;
+    }
+    private byte[] ACK(byte[] packet){
+        byte[] serverData = new byte[7];
+        ByteBuffer b = ByteBuffer.allocate(7);
+        b.put((byte) 0xC0);
+        b.put((byte) 1);
+        b.put((byte) 1); //true or false
+        b.put(packet);
 
         serverData = b.array();
         return serverData;
