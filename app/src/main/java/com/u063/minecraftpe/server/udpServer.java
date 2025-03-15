@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 
 public class udpServer {
     private DatagramSocket datagramSocket;
@@ -41,30 +42,39 @@ public class udpServer {
             DatagramPacket datagramPacket = new DatagramPacket(data,data.length);
             datagramSocket.receive(datagramPacket);
 
-            Log.e("Client", ""+datagramPacket.getLength());
+            Log.e("Client", ""+datagramPacket.getData()[0]);
             if(datagramPacket.getData()[0]==0x05){
                 byte[] serverData = new byte[28]; //ID_OPEN_CONNECTION_REPLY_1
-
-                serverData = CONNECTION_REPLY_1();
-
+                ByteBuffer b = ByteBuffer.allocate(28);
+                b.put((byte) 0x06);
+                b.put(MAGIC);
+                b.putLong(0x00000000372cdc9e);
+                b.put((byte) 0);
+                b.putShort((short) (datagramPacket.getLength()-18+1));
+                //serverData = CONNECTION_REPLY_1(datagramPacket.getLength());
+                serverData = b.array();
                 DatagramPacket reply = new DatagramPacket(serverData,
                         serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
                 datagramSocket.send(reply);
             }
         }
     }
-    private byte[] CONNECTION_REPLY_1(){
+    private byte[] CONNECTION_REPLY_1(int len){
         byte[] serverData = new byte[28];
         serverData[0] = 0x06;
         for(int i = 0; i<MAGIC.length; i++){
             serverData[i+1] = MAGIC[i];
         }
         for(int i = 0; i<Num2Byte.toByte(0x00000000372cdc9e).length; i++){
-            serverData[i+16] = Num2Byte.toByte(0x00000000372cdc9e)[i];
+            serverData[i+17] = Num2Byte.toByte(0x00000000372cdc9e)[i];
         }
         serverData[25] = 0x00;
-        for(int i = 0; i<Num2Byte.toByte((short) 1447).length; i++){
-            serverData[i+26] = Num2Byte.toByte((short) 1447)[i];
+        for(int i = 0; i<Num2Byte.toByte((short) (len-18+1)).length; i++){
+            serverData[i+26] = Num2Byte.toByte((short) (len-18+1))[i];
+            //Log.e("",""+(short) (len-18+1));
+        }
+        for(int i = 0; i<28; i++){
+            Log.e("0x06","i: "+i+"  "+serverData[i]);
         }
         return serverData;
     }
