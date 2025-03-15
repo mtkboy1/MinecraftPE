@@ -37,7 +37,7 @@ public class udpServer {
         }
     }
     public void start() throws IOException {
-        byte[] data = new byte[2000];
+        byte[] data = new byte[1500];
         while (true){
             DatagramPacket datagramPacket = new DatagramPacket(data,data.length);
             datagramSocket.receive(datagramPacket);
@@ -60,14 +60,23 @@ public class udpServer {
                 datagramSocket.send(reply);
             }
             if(datagramPacket.getData()[0]==-124){
+                byte[] serverData;
+                DatagramPacket reply;
                 /*byte[] serverData = datagramPacket.getData(); //0X84 BACK
                 DatagramPacket reply = new DatagramPacket(serverData,
                         serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
                 datagramSocket.send(reply);*/
-                ENCAPSULATION(datagramPacket.getData());
+                data = ENCAPSULATION(datagramPacket.getData());
+                if(data[0]==0x09){
+                    serverData = SERVER_HANDSHAKE(data); //0X84 BACK
+
+                    reply = new DatagramPacket(serverData,
+                            serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
+                    datagramSocket.send(reply);
+                }
                 /////////////////////////SUCK CODE////////////////////
 
-                /*serverData = new byte[7]; ////ACK
+                serverData = new byte[7]; ////ACK
                 byte[] count = new byte[3];
                 for(int i = 1; i<4; i++){
                     count[i-1]=datagramPacket.getData()[i];
@@ -76,7 +85,7 @@ public class udpServer {
                 serverData = ACK(count);
                 reply = new DatagramPacket(serverData,
                         serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
-                datagramSocket.send(reply);*/
+                datagramSocket.send(reply);
             }
         }
     }
@@ -118,13 +127,15 @@ public class udpServer {
     private byte[] ENCAPSULATION(byte[] bytes){
         byte[] b = new byte[bytes.length];
         String s="";
-        for(int i=10; i<bytes.length; i++){
+        for(int i=10; i<96; i++){
+            b[i-10] = bytes[i];
             s+=String.format("%02X ", bytes[i]);
         }
-        Log.e("",""+s);
+        Log.e("","len: "+bytes.length+", "+s);
         return b;
     }
     private byte[] putDataArray(){
+        byte[] bb = new byte[70];
         ByteBuffer b = ByteBuffer.allocate(70);
         byte[] unknown1 = new byte[] {(byte) 0xf5, (byte) 0xff, (byte) 0xff, (byte) 0xf5};
         byte[] unknown2 = new byte[] {(byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff};
@@ -139,5 +150,30 @@ public class udpServer {
             b.put((byte) 0x04);
             b.put(unknown2);
         }
+        return bb;
+    }
+    private byte[] SERVER_HANDSHAKE(byte[] bytes){
+        byte[] serverData = new byte[2000];
+        ByteBuffer b = ByteBuffer.allocate(106);
+        b.put((byte) 0x84);
+        b.put(new byte[]{bytes[1], bytes[2], bytes[3]});
+        b.put((byte) 0x40);
+        b.putShort((short) (96*8));
+        b.put(new byte[]{0, 0, 0});
+
+        b.put((byte) 0x10);
+        b.putInt(0x043f57fe);
+        b.put((byte) 0xcd);
+        b.putShort((short) 19132);
+        b.put(putDataArray());
+        b.put((byte) 0x00);
+        b.put((byte) 0x00);
+        for(int i=8; i<16; i++){
+            b.put(bytes[i]);
+        }
+        byte[] unknown = new byte[] {0x00, 0x00, 0x00, 0x00, 0x04, 0x44, 0x0b, (byte) 0xa9};
+        b.put(unknown);
+        serverData = b.array();
+        return serverData ;
     }
 }
