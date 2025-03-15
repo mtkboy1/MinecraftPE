@@ -45,21 +45,27 @@ public class udpServer {
             if(datagramPacket.getData()[0]==0x05){
                 byte[] serverData = new byte[28]; //ID_OPEN_CONNECTION_REPLY_1
 
-                serverData[0] = 0x06;
-                for(int i = 0; i<MAGIC.length; i++){
-                    serverData[i+1] = MAGIC[i];
-                }
-                for(int i = 0; i<Num2Byte.toByte(0x00000000372cdc9e).length; i++){
-                    serverData[i+16] = Num2Byte.toByte(0x00000000372cdc9e)[i];
-                }
-                serverData[25] = 0x00;
-                for(int i = 0; i<Num2Byte.toByte((short) 1447).length; i++){
-                    serverData[i+26] = Num2Byte.toByte((short) 1447)[i];
-                }
+                serverData = CONNECTION_REPLY_1();
+
                 DatagramPacket reply = new DatagramPacket(serverData,
                         serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
                 datagramSocket.send(reply);
             }
         }
+    }
+    private byte[] CONNECTION_REPLY_1(){
+        byte[] serverData = new byte[28];
+        serverData[0] = 0x06;
+        for(int i = 0; i<MAGIC.length; i++){
+            serverData[i+1] = MAGIC[i];
+        }
+        for(int i = 0; i<Num2Byte.toByte(0x00000000372cdc9e).length; i++){
+            serverData[i+16] = Num2Byte.toByte(0x00000000372cdc9e)[i];
+        }
+        serverData[25] = 0x00;
+        for(int i = 0; i<Num2Byte.toByte((short) 1447).length; i++){
+            serverData[i+26] = Num2Byte.toByte((short) 1447)[i];
+        }
+        return serverData;
     }
 }
