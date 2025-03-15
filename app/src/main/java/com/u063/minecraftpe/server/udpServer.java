@@ -52,7 +52,7 @@ public class udpServer {
                 datagramSocket.send(reply);
             }
             if(datagramPacket.getData()[0]==0x07){
-                byte[] serverData = new byte[30]; //ID_OPEN_CONNECTION_REPLY_1
+                byte[] serverData = new byte[30]; //ID_OPEN_CONNECTION_REPLY_2
 
                 serverData = CONNECTION_REPLY_2(datagramPacket.getPort());
                 DatagramPacket reply = new DatagramPacket(serverData,
