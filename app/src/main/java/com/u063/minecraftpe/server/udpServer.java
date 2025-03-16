@@ -31,6 +31,7 @@ public class udpServer {
         MAGIC[14] = 0x56;
         MAGIC[15] = 0x78;
         LOGIN_PACKETS.MAGIC =  MAGIC;
+        PONG_PACKETS.MAGIC = MAGIC;
         try {
             datagramSocket = new DatagramSocket(port);
         } catch (SocketException e) {
@@ -44,6 +45,13 @@ public class udpServer {
             datagramSocket.receive(datagramPacket);
 
             //Log.e("Client", "ID: "+String.format("%02X ", datagramPacket.getData()[0])+", len: "+datagramPacket.getLength());
+            if(datagramPacket.getData()[0]==0x01){
+                byte[] serverData = new byte[28]; //ID_UNCONNECTED_PING_OPEN_CONNECTIONS
+                serverData = PONG_PACKETS.ID_UNCONNECTED_PING_OPEN_CONNECTIONS();
+                DatagramPacket reply = new DatagramPacket(serverData,
+                        serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
+                datagramSocket.send(reply);
+            }
             if(datagramPacket.getData()[0]==0x05){
                 byte[] serverData = new byte[28]; //ID_OPEN_CONNECTION_REPLY_1
 
@@ -66,15 +74,19 @@ public class udpServer {
 
                 data = ENCAPSULATION(datagramPacket.getData());
                 if(data[0]==0x09){
-                    serverData = SERVER_HANDSHAKE(data); //0X84 BACK
-
+                    serverData = SERVER_HANDSHAKE(data); //0X84 SERVER_HANDSHAKE
                     reply = new DatagramPacket(serverData,
                             serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
                     datagramSocket.send(reply);
+                }
 
+                if(data[0]==(byte) 0x82){
+                    serverData = LoginStatusPacket(data); //0X84 BACK
+                    reply = new DatagramPacket(serverData,
+                            serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
+                    datagramSocket.send(reply);
                 }
                 serverData = PONG_PACKETS.PONG(data); //0X84 BACK
-
                 reply = new DatagramPacket(serverData,
                         serverData.length, datagramPacket.getAddress(), datagramPacket.getPort());
                 datagramSocket.send(reply);
@@ -156,5 +168,17 @@ public class udpServer {
         serverData = b.array();
         return serverData ;
     }
+    private byte[] LoginStatusPacket(byte[] bytes){
+        byte[] serverData = new byte[2000];
+        ByteBuffer b = ByteBuffer.allocate(12);
+        b.put((byte) 0x84);
+        b.put(new byte[]{bytes[1], bytes[2], bytes[3]});
+        b.put((byte) 0x00);
+        b.putShort((short) (4*8));
 
+        b.put((byte) 0x83);
+        b.putInt(1);
+        serverData = b.array();
+        return serverData ;
+    }
 }
